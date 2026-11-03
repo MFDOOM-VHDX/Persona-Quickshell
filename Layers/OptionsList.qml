@@ -12,14 +12,6 @@ Item {
     property int localTab: activeBar
     property int activeShaderIndex: -1
     onActiveBarChanged: localTab = activeBar
-    FontLoader {
-        id: bebasNeue
-        source: Qt.resolvedUrl("../Assets/fonts/BebasNeue-Regular.ttf")
-    }
-    FontLoader {
-        id: montserrat
-        source: Qt.resolvedUrl("../Assets/fonts/Montserrat-Light.ttf")
-    }
     readonly property var revealContent: [
         {
             upper: ["Filter to reduce Bluelight"],
@@ -40,29 +32,35 @@ Item {
 
     readonly property var shaderPaths: [Qt.resolvedUrl("../Assets/ScreenShaders/bluelight.frag").toString().replace("file://", ""), Qt.resolvedUrl("../Assets/ScreenShaders/grey.glsl").toString().replace("file://", ""), Qt.resolvedUrl("../Assets/ScreenShaders/invert.glsl").toString().replace("file://", "")]
 
-    readonly property string offShader: Qt.resolvedUrl("../Assets/ScreenShaders/vibrant.glsl").toString().replace("file://", "")
+    property int pendingShaderIndex: -1
+    property string shaderError: ""
+    readonly property bool shaderBusy: shaderProc.running
 
     function toggleShader(index) {
-        if (activeShaderIndex === index) {
-            activeShaderIndex = -1;
-            shaderProc.command = ["hyprctl", "eval", "hl.config({ decoration = { screen_shader = \"\" } })"];
-            shaderProc.startDetached();
-        } else {
-            activeShaderIndex = index;
-            shaderProc.command = ["hyprctl", "eval", "hl.config({ decoration = { screen_shader = \"" + shaderPaths[index] + "\" } })"];
-            shaderProc.startDetached();
-        }
+        if (shaderBusy || index < 0 || index >= shaderPaths.length)
+            return;
+        shaderError = "";
+        pendingShaderIndex = activeShaderIndex === index ? -1 : index;
+        // Hyprlang (.conf) uses keyword, rather than Lua eval.
+        var path = pendingShaderIndex === -1 ? "[[EMPTY]]"
+                                            : decodeURIComponent(shaderPaths[index]);
+        shaderProc.command = ["hyprctl", "keyword", "decoration:screen_shader", path];
+        shaderProc.running = true;
     }
 
     Process {
         id: shaderProc
-        stdout: SplitParser {
-            onRead: data => console.log("STDOUT:", data)
+        stdout: StdioCollector { id: shaderOutput }
+        stderr: StdioCollector { id: shaderStderr }
+        onExited: (code, status) => {
+            if (code === 0 && shaderOutput.text.trim().toLowerCase() === "ok") {
+                revealRoot.activeShaderIndex = revealRoot.pendingShaderIndex;
+            } else {
+                revealRoot.shaderError = shaderStderr.text.trim()
+                    || shaderOutput.text.trim() || ("hyprctl exited with code " + code);
+                console.warn("Screen shader:", revealRoot.shaderError);
+            }
         }
-        stderr: SplitParser {
-            onRead: data => console.log("STDERR:", data)
-        }
-        onExited: (code, status) => console.log("Exited:", code, status)
     }
 
     Rectangle {
@@ -295,7 +293,8 @@ Item {
                     delegate: Text {
                         required property string modelData
                         text: modelData
-                        font.family: montserrat.name
+                        font.family: "Montserrat"
+                        font.weight: Font.Light
                         font.pixelSize: 20
                         color: "white"
                         horizontalAlignment: Text.AlignHCenter
@@ -340,7 +339,8 @@ Item {
 
                 Text {
                     text: revealRoot.revealContent[revealRoot.localTab].lower
-                    font.family: montserrat.name
+                    font.family: "Montserrat"
+                    font.weight: Font.Light
                     font.pixelSize: 18
                     color: "white"
                     wrapMode: Text.Wrap
@@ -348,8 +348,9 @@ Item {
                 }
 
                 Text {
-                    text: revealRoot.activeShaderIndex === revealRoot.localTab ? "● ON" : "○ OFF"
-                    font.family: bebasNeue.name
+                    text: revealRoot.shaderBusy ? "…" : revealRoot.shaderError ? "ERROR"
+                        : revealRoot.activeShaderIndex === revealRoot.localTab ? "● ON" : "○ OFF"
+                    font.family: "Bebas Neue"
                     font.pixelSize: 16
                     color: revealRoot.activeShaderIndex === revealRoot.localTab ? "#4a8fff" : "#66ffffff"
                     Behavior on color {
@@ -365,6 +366,7 @@ Item {
                 onPressed: lowerBar.scale = 0.97
                 onReleased: lowerBar.scale = 1.0
                 onCanceled: lowerBar.scale = 1.0
+                enabled: !revealRoot.shaderBusy
                 onClicked: revealRoot.toggleShader(revealRoot.localTab)
             }
         }
