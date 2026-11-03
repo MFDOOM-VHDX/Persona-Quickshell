@@ -56,8 +56,9 @@ Scope {
                 visible: root.contentVisible
                 z: 0
             }
-            //bluebar
+            // Keep the demo's diagonal composition across different aspect ratios.
             Item {
+                id: bandContainer
                 anchors.fill: parent
                 visible: root.contentVisible
                 z: 1
@@ -65,36 +66,39 @@ Scope {
 
                 Rectangle {
                     id: blueBand
-                    width: parent.width * 2
-                    height: parent.height * 0.2
-                    x: -parent.width * 0.2
-                    y: parent.height * -0.1
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: -bandContainer.height * 0.05
+                    width: Math.sqrt(bandContainer.width * bandContainer.width
+                                     + bandContainer.height * bandContainer.height) * 2
+                    height: bandContainer.height * 0.20
                     color: "#1a4fa8"
-                    transform: Rotation {
-                        origin.x: blueBand.width / 2
-                        origin.y: blueBand.height / 2
-                        angle: 20
-                    }
+                    transformOrigin: Item.Center
+                    rotation: Math.atan2(bandContainer.height * 0.62,
+                                         bandContainer.width) * 180 / Math.PI
                 }
             }
 
-            //whiteline
             Item {
+                id: lineContainer
                 anchors.fill: parent
                 visible: root.contentVisible
                 z: 2
+                clip: true
+
                 Rectangle {
                     id: whiteLine
-                    width: parent.width * 200
-                    height: 5
-                    x: -parent.width * 0.2
-                    y: parent.height * 0.99
+                    // Follow the date row's rise/run; cross just beneath the labels.
+                    readonly property real riseRatio: 0.55 / 0.82
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: lineContainer.height
+                                                  * (0.86 - riseRatio * 0.5 - 0.5)
+                    width: Math.sqrt(lineContainer.width * lineContainer.width
+                                     + lineContainer.height * lineContainer.height) * 2
+                    height: Math.max(2, lineContainer.height * 0.004)
                     color: "white"
-                    transform: Rotation {
-                        origin.x: whiteLine.width / 2
-                        origin.y: whiteLine.height / 2
-                        angle: -20
-                    }
+                    transformOrigin: Item.Center
+                    rotation: -Math.atan2(lineContainer.height * riseRatio,
+                                          lineContainer.width) * 180 / Math.PI
                 }
             }
             // ── Year/Month label — inside band on the left ──
@@ -219,33 +223,29 @@ Scope {
         opacity: alphaVal
 
         Item {
+            id: todayRings
             visible: entryRoot.todayFlag
-            anchors.left: entryRoot.left
-            anchors.leftMargin: -109
-            anchors.verticalCenter: entryRoot.verticalCenter
-            anchors.verticalCenterOffset: -10
-            width: entryRoot.numSize * 1.5
+            // Anchor to the rendered date, including one- and two-digit dates.
+            anchors.centerIn: dayNumText
+            width: entryRoot.numSize * 2
             height: width
+
             Rectangle {
-                anchors.centerIn: parent
-                anchors.verticalCenterOffset: 7
-                width: entryRoot.numSize * 2.3
-                height: width
+                anchors.fill: parent
                 radius: width / 2
                 color: "transparent"
                 border.color: "#6490ff"
-                border.width: 15
+                border.width: entryRoot.numSize * 0.12
                 opacity: 0.6
             }
             Rectangle {
                 anchors.centerIn: parent
-                anchors.verticalCenterOffset: 1
-                width: entryRoot.numSize * 1
+                width: entryRoot.numSize * 1.65
                 height: width
                 radius: width / 2
                 color: "transparent"
                 border.color: "#6490ff"
-                border.width: 10
+                border.width: entryRoot.numSize * 0.055
                 opacity: 0.6
             }
         }
