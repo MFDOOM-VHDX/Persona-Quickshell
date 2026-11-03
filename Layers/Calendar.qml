@@ -64,14 +64,15 @@ Scope {
                 clip: true
 
                 Rectangle {
+                    id: blueBand
                     width: parent.width * 2
                     height: parent.height * 0.2
                     x: -parent.width * 0.2
                     y: parent.height * -0.1
                     color: "#1a4fa8"
                     transform: Rotation {
-                        origin.x: parent.width / 2
-                        origin.y: parent.height / 2
+                        origin.x: blueBand.width / 2
+                        origin.y: blueBand.height / 2
                         angle: 20
                     }
                 }
@@ -83,14 +84,15 @@ Scope {
                 visible: root.contentVisible
                 z: 2
                 Rectangle {
+                    id: whiteLine
                     width: parent.width * 200
                     height: 5
                     x: -parent.width * 0.2
                     y: parent.height * 0.99
                     color: "white"
                     transform: Rotation {
-                        origin.x: parent.width / 2
-                        origin.y: parent.height / 2
+                        origin.x: whiteLine.width / 2
+                        origin.y: whiteLine.height / 2
                         angle: -20
                     }
                 }
@@ -137,15 +139,15 @@ Scope {
                     model: 7
                     delegate: CalendarEntry {
                         required property int index
-                        readonly property int offset: index - 3
+                        readonly property int dayOffset: index - 3
                         readonly property var entryDate: {
                             var d = new Date(Dat.Time.now);
-                            d.setDate(d.getDate() + offset);
+                            d.setDate(d.getDate() + dayOffset);
                             d.setHours(12, 0, 0, 0);
                             return d;
                         }
-                        readonly property bool isToday: offset === 0
-                        readonly property bool isPast: offset < 0
+                        readonly property bool isToday: dayOffset === 0
+                        readonly property bool isPast: dayOffset < 0
                         readonly property real t: index / 6.0
 
                         x: parent.width * 0.08 + t * (parent.width * 0.82)
@@ -218,8 +220,10 @@ Scope {
 
         Item {
             visible: entryRoot.todayFlag
-            anchors.left: parent.left - 109
-            anchors.verticalCenter: parent.verticalCenter * -10
+            anchors.left: entryRoot.left
+            anchors.leftMargin: -109
+            anchors.verticalCenter: entryRoot.verticalCenter
+            anchors.verticalCenterOffset: -10
             width: entryRoot.numSize * 1.5
             height: width
             Rectangle {
