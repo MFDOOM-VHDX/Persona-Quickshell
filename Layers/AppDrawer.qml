@@ -315,29 +315,42 @@ Scope {
                             MouseArea {
                                 id: bladeMouseArea
                                 anchors.fill: parent
-                                cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-                                property real startX: 0
+                                cursorShape: pressed ? Qt.ClosedHandCursor : Qt.PointingHandCursor
                                 property real dragStartX: 0
+                                property real dragStartY: 0
+                                property real maxMovement: 0
+                                function activateEntry() {
+                                    modelData.action();
+                                    toolskiRoot.isExpanded = false;
+                                    toolskiRoot.isHovered = false;
+                                }
                                 onPressed: mouse => {
-                                    startX = blade.x;
-                                    dragStartX = mouse.x;
+                                    var point = mapToItem(toolskiRoot, mouse.x, mouse.y);
+                                    dragStartX = point.x;
+                                    dragStartY = point.y;
+                                    maxMovement = 0;
+                                    autoHideTimer.stop();
                                 }
                                 onPositionChanged: mouse => {
                                     if (pressed) {
-                                        var delta = mouse.x - dragStartX;
-                                        if (delta > 0)
-                                            blade.x = startX + delta;
+                                        // Measure gestures outside the translated and rotated blade.
+                                        var point = mapToItem(toolskiRoot, mouse.x, mouse.y);
+                                        var delta = point.x - dragStartX;
+                                        maxMovement = Math.max(maxMovement, Math.abs(delta),
+                                                               Math.abs(point.y - dragStartY));
+                                        blade.x = Math.max(0, delta);
                                     }
                                 }
                                 onReleased: mouse => {
-                                    var delta = mouse.x - dragStartX;
-                                    if (delta > 50) {
-                                        modelData.action();
-                                        toolskiRoot.isExpanded = false;
-                                        toolskiRoot.isHovered = false;
-                                    }
-                                    blade.x = Qt.binding(() => startX);
+                                    var point = mapToItem(toolskiRoot, mouse.x, mouse.y);
+                                    var delta = point.x - dragStartX;
+                                    var verticalDelta = Math.abs(point.y - dragStartY);
+                                    blade.x = 0;
+                                    if ((delta > 50 && verticalDelta < 40)
+                                            || (maxMovement <= 12 && Math.abs(delta) <= 12 && verticalDelta <= 12))
+                                        activateEntry();
                                 }
+                                onCanceled: blade.x = 0
                             }
                             Behavior on x {
                                 SpringAnimation {
