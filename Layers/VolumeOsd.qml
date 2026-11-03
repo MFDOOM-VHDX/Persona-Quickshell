@@ -62,7 +62,7 @@ Scope {
                         }
                         color: "#ffffff"
                         font.pixelSize: 25
-                        font.family: "Montserrat Light"
+                        font.family: "Symbols Nerd Font"
                     }
 
                     Rectangle {
