@@ -33,13 +33,12 @@ Scope {
 
     Timer {
         id: updateTimer
-        interval: 100
+        interval: 500
         running: root.backlightDevice !== ""
         repeat: true
         triggeredOnStart: true
         onTriggered: {
             currentFile.reload();
-            maxFile.reload();
         }
     }
 
@@ -116,7 +115,7 @@ Scope {
                         text: "󰃠"
                         color: "#ffffff"
                         font.pixelSize: 25
-                        font.family: "Montserrat Light"
+                        font.family: "Symbols Nerd Font"
                     }
                     Rectangle {
                         Layout.fillWidth: true
