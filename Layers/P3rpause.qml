@@ -12,12 +12,12 @@ Scope {
 
     Process {
         id: poweroffProcess
-        command: ["loginctl", "poweroff"]
+        command: ["systemctl", "poweroff"]
         running: false
     }
     Process {
         id: restartProcess
-        command: ["loginctl", "reboot"]
+        command: ["systemctl", "reboot"]
         running: false
     }
     Process {
