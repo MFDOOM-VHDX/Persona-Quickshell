@@ -41,7 +41,7 @@ Scope {
             color: "transparent"
             WlrLayershell.layer: WlrLayer.Top
             WlrLayershell.exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+            WlrLayershell.keyboardFocus: visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
             anchors {
                 left: true
                 right: true
@@ -83,8 +83,10 @@ Scope {
                 z: 0
             }
 
-            Item {
+            FocusScope {
                 id: contentRoot
+                focus: visible
+                Keys.onEscapePressed: root.shouldShow = false
                 anchors.fill: parent
                 z: 3
                 visible: root.contentVisible
